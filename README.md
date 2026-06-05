@@ -21,14 +21,16 @@ https://paramedic119.github.io/video-laryngoscope-pretest/
 
 ## ファイル構成
 
-| ファイル | 役割 |
+| パス | 役割 |
 |---|---|
-| `index.html` | 画面の骨組み |
-| `styles.css` | デザイン（Apple風・モバイル優先・ダークモード対応） |
-| `questions.js` | 全63問のデータ（虫食い箇所を難易度別に仕分け済み） |
-| `app.js` | 表示・タップ・難易度切替の動作 |
+| `index.html` | エントリ（Vite が `src/main.tsx` を読み込む） |
+| `src/App.tsx` | 表示・タップ・難易度切替の動作（React） |
+| `src/questions.ts` | 全63問のデータ（虫食い箇所を難易度別に仕分け済み・TypeScript） |
+| `src/index.css` | デザイン（Tailwind v4 / shadcn・Apple風・ダークモード対応） |
+| `src/components/ui/` | shadcn/ui コンポーネント |
+| `.github/workflows/deploy.yml` | GitHub Pages へ自動ビルド＆公開 |
 
-ビルド不要・依存ライブラリなしの静的サイトです。`index.html` をブラウザで開くだけでも動きます。
+React + Vite + Tailwind CSS + shadcn/ui で構築しています。ローカルで動かす場合は `npm install` のあと `npm run dev`、本番ビルドは `npm run build`（`dist/` が生成されます）。`main` ブランチへ push すると GitHub Actions が自動でビルドして公開します。
 
 ## 出典（記載ページ）
 

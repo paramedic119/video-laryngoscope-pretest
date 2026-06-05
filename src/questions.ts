@@ -11,7 +11,14 @@
  *   黒ページ = 救急救命士標準テキスト 第10版
  *   「プロトコール」= 愛知県救急隊心肺蘇生法プロトコール（令和3年10月11日 一部改正）
  */
-const QUESTIONS = [
+export type Segment = string | { t: string; lv: 1 | 2 | 3 }
+export interface Question {
+  id: number
+  page: string
+  seg: Segment[]
+}
+
+export const QUESTIONS: Question[] = [
   { id: 1, page: "2", seg: [
     {t:"軟口蓋",lv:2}, "に連なる", {t:"弓状",lv:3}, "の", {t:"ヒダ",lv:3}, "を", {t:"口蓋舌弓",lv:1}, "と呼ぶ。"
   ]},
