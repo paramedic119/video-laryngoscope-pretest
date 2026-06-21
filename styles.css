@@ -1,26 +1,31 @@
+/* デザイン：クリニカル・ネイビー（紺＝ブランド／ティール＝アクション） */
 :root{
-  --bg:#f5f5f7;
+  --bg:#f4f6f8;
   --card:#ffffff;
-  --text:#1d1d1f;
-  --muted:#6e6e73;
-  --accent:#0071e3;
-  --accent-soft:rgba(0,113,227,.10);
-  --hair:rgba(0,0,0,.10);
-  --chip:rgba(0,0,0,.06);
-  --track:rgba(118,118,128,.12);
-  --shadow:0 1px 2px rgba(0,0,0,.05);
+  --text:#14233a;
+  --muted:#61707f;
+  --brand:#1b3a5b;          /* 紺：見出し文字 */
+  --seg:#1b3a5b;            /* 選択中タブ・主ボタン・選択チップの地（白文字が乗る） */
+  --accent:#0f8a7e;         /* ティール：進捗バー・答えハイライト等のアクセント */
+  --accent-soft:rgba(15,138,126,.12);
+  --hair:rgba(20,35,58,.12);
+  --chip:rgba(20,35,58,.06);
+  --track:rgba(20,35,58,.10);
+  --shadow:0 1px 2px rgba(20,35,58,.06);
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --bg:#000000;
-    --card:#1c1c1e;
-    --text:#f5f5f7;
-    --muted:#98989d;
-    --accent:#2997ff;
-    --accent-soft:rgba(41,151,255,.18);
+    --bg:#0f1620;
+    --card:#18222e;
+    --text:#e8eef4;
+    --muted:#9aaabc;
+    --brand:#79a6d6;
+    --seg:#2a5286;
+    --accent:#2bb6a3;
+    --accent-soft:rgba(43,182,163,.20);
     --hair:rgba(255,255,255,.12);
-    --chip:rgba(255,255,255,.14);
-    --track:rgba(118,118,128,.24);
+    --chip:rgba(255,255,255,.09);
+    --track:rgba(255,255,255,.12);
     --shadow:0 1px 2px rgba(0,0,0,.4);
   }
 }
@@ -48,6 +53,7 @@ body{
   font-size:clamp(24px,6.4vw,34px);
   font-weight:700;
   letter-spacing:-.022em;
+  color:var(--brand);
 }
 .hero__subtitle{
   margin:6px 0 0;
@@ -96,18 +102,19 @@ body{
   border-radius:7px;
   cursor:pointer;
   -webkit-tap-highlight-color:transparent;
-  transition:color .2s ease, opacity .2s ease;
+  transition:opacity .2s ease;
 }
 .segmented__item:not(.is-active){opacity:.72;}
+.segmented__item.is-active{color:#fff; opacity:1;}
 .segmented__thumb{
   position:absolute;
   top:2px;
   left:2px;
   width:calc((100% - 4px) / 3);
   height:calc(100% - 4px);
-  background:var(--card);
+  background:var(--seg);
   border-radius:7px;
-  box-shadow:0 1px 3px rgba(0,0,0,.14),0 1px 1px rgba(0,0,0,.04);
+  box-shadow:0 1px 3px rgba(20,35,58,.20),0 1px 1px rgba(20,35,58,.06);
   transition:transform .26s cubic-bezier(.2,.7,.3,1);
 }
 
@@ -120,7 +127,7 @@ body{
 }
 .btn--reveal{
   align-self:center;
-  background:var(--accent);
+  background:var(--seg);
   color:#fff;
   font-size:14px;
   font-weight:600;
@@ -149,7 +156,7 @@ body{
   gap:12px;
   background:var(--card);
   border:1px solid var(--hair);
-  border-radius:18px;
+  border-radius:14px;
   padding:16px 18px;
   box-shadow:var(--shadow);
 }
@@ -222,15 +229,15 @@ body{
 
 /* ============ 拡張：採点色・進捗・モード・力試し ============ */
 :root{
-  --good:#34c759; --good-soft:rgba(52,199,89,.12);
-  --mid:#ff9500;  --mid-soft:rgba(255,149,0,.14);
-  --bad:#ff3b30;  --bad-soft:rgba(255,59,48,.12);
+  --good:#0f8a7e; --good-soft:rgba(15,138,126,.10); --good-line:rgba(15,138,126,.42);
+  --mid:#b5832b;  --mid-soft:rgba(181,131,43,.12);  --mid-line:rgba(181,131,43,.42);
+  --bad:#b3402f;  --bad-soft:rgba(179,64,47,.10);   --bad-line:rgba(179,64,47,.40);
 }
 @media (prefers-color-scheme: dark){
   :root{
-    --good:#30d158; --good-soft:rgba(48,209,88,.20);
-    --mid:#ff9f0a;  --mid-soft:rgba(255,159,10,.22);
-    --bad:#ff453a;  --bad-soft:rgba(255,69,58,.20);
+    --good:#2bb6a3; --good-soft:rgba(43,182,163,.18); --good-line:rgba(43,182,163,.45);
+    --mid:#e0a94a;  --mid-soft:rgba(224,169,74,.18);  --mid-line:rgba(224,169,74,.45);
+    --bad:#ef6a59;  --bad-soft:rgba(239,106,89,.18);  --bad-line:rgba(239,106,89,.45);
   }
 }
 
@@ -292,7 +299,7 @@ body{
   padding:7px 14px; border-radius:999px; cursor:pointer;
   -webkit-tap-highlight-color:transparent; transition:all .15s ease;
 }
-.chip.is-active{background:var(--accent); color:#fff; border-color:var(--accent);}
+.chip.is-active{background:var(--seg); color:#fff; border-color:var(--seg);}
 .chip.is-custom{border-style:dashed; color:var(--accent);}
 .chip.is-custom.is-active{color:#fff;}
 
@@ -314,7 +321,7 @@ body{
 /* 大ボタン */
 .btn--big{display:block; width:100%; max-width:360px; margin:0 auto;
   padding:15px 0; border-radius:14px; font-size:16px; font-weight:700;}
-.btn--primary{background:var(--accent); color:#fff;}
+.btn--primary{background:var(--seg); color:#fff;}
 .btn--primary:active{transform:scale(.985);}
 .btn--ghost{
   background:var(--card); border:1px solid var(--hair); color:var(--text);
@@ -336,9 +343,9 @@ body{
 .grade__mark--triangle::before{content:"△";}
 .grade__mark--cross::before{content:"✕";}
 .grade__label{font-size:13px; font-weight:600;}
-.grade.is-good{background:var(--good-soft);} .grade.is-good .grade__mark,.grade.is-good .grade__label{color:var(--good);}
-.grade.is-mid{background:var(--mid-soft);}   .grade.is-mid .grade__mark,.grade.is-mid .grade__label{color:var(--mid);}
-.grade.is-bad{background:var(--bad-soft);}   .grade.is-bad .grade__mark,.grade.is-bad .grade__label{color:var(--bad);}
+.grade.is-good{border-color:var(--good-line); background:var(--good-soft);} .grade.is-good .grade__mark,.grade.is-good .grade__label{color:var(--good);}
+.grade.is-mid{border-color:var(--mid-line); background:var(--mid-soft);}   .grade.is-mid .grade__mark,.grade.is-mid .grade__label{color:var(--mid);}
+.grade.is-bad{border-color:var(--bad-line); background:var(--bad-soft);}   .grade.is-bad .grade__mark,.grade.is-bad .grade__label{color:var(--bad);}
 
 /* 空・完了・結果 */
 .stage__empty{text-align:center; padding:28px 12px;}
