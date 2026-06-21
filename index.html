@@ -3,31 +3,93 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-  <meta name="theme-color" content="#f5f5f7">
-  <meta name="description" content="ビデオ喉頭鏡（AWS）追加講習・運用試験 事前学習プレテストの虫食い暗記アプリ">
-  <title>ビデオ喉頭鏡プレテスト｜虫食い暗記</title>
+  <meta name="theme-color" content="#f5f5f7" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="description" content="ビデオ喉頭鏡（AWS）追加講習・運用試験 事前学習プレテストの暗記アプリ。思い出して自己採点・間隔反復・力試しテストで記憶に残す。">
+  <title>ビデオ喉頭鏡プレテスト｜暗記アプリ</title>
   <link rel="stylesheet" href="styles.css">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="icon" href="favicon-32.png" sizes="32x32">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="喉頭鏡プレテスト">
 </head>
 <body>
   <header class="hero">
+    <button class="hero__gear" id="settingsBtn" type="button" aria-label="学習記録をリセット" title="学習記録をリセット">⟲</button>
     <h1 class="hero__title">ビデオ喉頭鏡プレテスト</h1>
-    <p class="hero__subtitle">虫食い暗記 ・ 全63問</p>
+    <p class="hero__subtitle">思い出して覚える ・ 全63問</p>
   </header>
 
-  <div class="toolbar" id="toolbar">
-    <div class="segmented" role="tablist" aria-label="難易度">
-      <span class="segmented__thumb" aria-hidden="true"></span>
+  <!-- 進捗パネル -->
+  <section class="progress" aria-label="学習の進み具合">
+    <div class="progress__head">
+      <span class="progress__label">定着度</span>
+      <span class="progress__pct" id="progPct">0%</span>
+    </div>
+    <div class="bar"><span class="bar__fill" id="barFill"></span></div>
+    <div class="stats">
+      <div class="stat"><span class="stat__num" id="statMaster">0</span><span class="stat__cap">マスター</span></div>
+      <div class="stat"><span class="stat__num" id="statLearning">0</span><span class="stat__cap">学習中</span></div>
+      <div class="stat"><span class="stat__num" id="statNew">0</span><span class="stat__cap">未学習</span></div>
+    </div>
+    <div class="chips-info">
+      <span class="info"><span class="info__num" id="chipStreak">0</span>日連続</span>
+      <span class="info">今日 <span class="info__num" id="chipToday">0</span>問</span>
+      <span class="info info--due">復習 <span class="info__num" id="chipDue">0</span>問</span>
+    </div>
+  </section>
+
+  <!-- モード切替 -->
+  <div class="toolbar">
+    <div class="segmented segmented--mode" role="tablist" aria-label="モード">
+      <span class="segmented__thumb" id="modeThumb" aria-hidden="true"></span>
+      <button class="modeitem segmented__item is-active" data-mode="study" role="tab" aria-selected="true">暗記</button>
+      <button class="modeitem segmented__item" data-mode="recall" role="tab" aria-selected="false">思い出す</button>
+      <button class="modeitem segmented__item" data-mode="test" role="tab" aria-selected="false">力試し</button>
+    </div>
+  </div>
+
+  <!-- サブ操作（難易度・フィルタ） -->
+  <div class="subbar">
+    <div class="segmented segmented--diff" id="difficulty" role="tablist" aria-label="難易度（隠す量）">
+      <span class="segmented__thumb" id="diffThumb" aria-hidden="true"></span>
       <button class="segmented__item is-active" data-level="1" role="tab" aria-selected="true">初級</button>
       <button class="segmented__item" data-level="2" role="tab" aria-selected="false">中級</button>
       <button class="segmented__item" data-level="3" role="tab" aria-selected="false">上級</button>
     </div>
-    <button class="btn btn--reveal" id="revealToggle" type="button" aria-pressed="false">答えを表示</button>
+
+    <div class="chips" id="filters" hidden>
+      <button class="chip is-active" data-filter="review">今日の復習</button>
+      <button class="chip" data-filter="all">すべて</button>
+      <button class="chip" data-filter="weak">苦手</button>
+      <button class="chip" data-filter="new">未学習</button>
+      <button class="chip is-custom" id="chipCustom" data-filter="custom" hidden>間違いだけ</button>
+    </div>
   </div>
 
-  <main class="list" id="list" aria-live="polite"></main>
+  <main class="main">
+    <!-- 暗記モード -->
+    <section id="view-study" class="view">
+      <div class="study-bar">
+        <button class="btn btn--reveal" id="revealToggle" type="button" aria-pressed="false">答えを表示</button>
+      </div>
+      <div class="list" id="studyList" aria-live="polite"></div>
+    </section>
+
+    <!-- 思い出すモード -->
+    <section id="view-recall" class="view" hidden>
+      <div class="stage" id="recallStage" aria-live="polite"></div>
+    </section>
+
+    <!-- 力試しモード -->
+    <section id="view-test" class="view" hidden>
+      <div class="stage" id="testStage" aria-live="polite"></div>
+    </section>
+  </main>
 
   <footer class="foot">
-    <p class="foot__hint">グレーの部分をタップすると答えが出ます。もう一度タップで隠せます。</p>
+    <p class="foot__hint">「思い出す」で頭の中で答えてから採点。○覚えてた／△あいまい／✕忘れた で記録が残り、苦手は自動でくり返し出ます。</p>
     <p class="foot__src">
       記載ページ：へるす出版「ビデオ喉頭鏡（エアウェイスコープ）気管挿管のポイントとトラブル対策」／救急救命士標準テキスト 第10版。<br>
       「プロトコール」＝愛知県救急隊心肺蘇生法プロトコール（令和3年10月11日 一部改正）。ビデオ喉頭鏡はAWSについての問とする。
@@ -35,6 +97,8 @@
   </footer>
 
   <script src="questions.js"></script>
+  <script src="srs.js"></script>
+  <script src="storage.js"></script>
   <script src="app.js"></script>
 </body>
 </html>
