@@ -62,6 +62,15 @@
     return p;
   }
 
+  /* ====== 解説（💡ポイント）。q.note が無ければ何も返さない（後方互換） ====== */
+  function buildNote(q, hidden) {
+    if (!q.note) return null;
+    var box = el("div", "card__note" + (hidden ? " is-hidden" : ""));
+    box.appendChild(el("span", "card__note-icon", "💡"));
+    box.appendChild(el("span", "card__note-text", q.note));
+    return box;
+  }
+
   /* ====== 進捗パネル ====== */
   function renderProgress() {
     var p = VLRStore.progress(QUESTIONS);
@@ -85,6 +94,8 @@
       card.appendChild(el("div", "card__no", q.id));
       var body = el("div", "card__body");
       body.appendChild(buildText(q, revealAll));
+      var note = buildNote(q, !revealAll);
+      if (note) body.appendChild(note);
       body.appendChild(el("div", "card__page", "記載：" + pageLabel(q.page)));
       card.appendChild(body);
       frag.appendChild(card);
@@ -98,6 +109,7 @@
     btn.classList.toggle("is-on", on);
     btn.setAttribute("aria-pressed", on ? "true" : "false");
     Array.prototype.forEach.call(document.querySelectorAll("#studyList .blank"), function (b) { setBlank(b, on); });
+    Array.prototype.forEach.call(document.querySelectorAll("#studyList .card__note"), function (n) { n.classList.toggle("is-hidden", !on); });
   }
 
   /* ====== 思い出すモード（想起→自己採点） ====== */
@@ -170,6 +182,8 @@
       reveal.addEventListener("click", function () { recallRevealed = true; renderRecall(); });
       wrap.appendChild(reveal);
     } else {
+      var rnote = buildNote(q, false);
+      if (rnote) wrap.appendChild(rnote);
       var prompt = el("p", "stage__prompt", "思い出せた？");
       wrap.appendChild(prompt);
       wrap.appendChild(gradeButtons(q.id, function () {
@@ -225,8 +239,10 @@
     return row;
   }
 
-  /* ====== 力試しモード（ランダム10問テスト） ====== */
-  var TEST_N = 10;
+  /* ====== 力試し／模擬試験モード ====== */
+  var TEST_OPTS = [10, 20, QUESTIONS.length];  // 出題数の選択肢（10 / 20 / 全問）
+  var testCount = 10;                          // 選択中の出題数
+  var PASS_LINE = 80;                          // 合格ライン（%）
 
   function renderTest() {
     var wrap = $("testStage");
@@ -254,6 +270,8 @@
       reveal.addEventListener("click", function () { test.revealed = true; renderTest(); });
       wrap.appendChild(reveal);
     } else {
+      var tnote = buildNote(q, false);
+      if (tnote) wrap.appendChild(tnote);
       wrap.appendChild(el("p", "stage__prompt", "思い出せた？"));
       wrap.appendChild(gradeButtons(q.id, function (grade) {
         test.results[q.id] = grade;
@@ -267,7 +285,22 @@
   function testIntro() {
     var box = el("div", "stage__empty");
     box.appendChild(el("div", "stage__empty-emoji", "📝"));
-    box.appendChild(el("p", "stage__empty-msg", "ランダムに" + Math.min(TEST_N, QUESTIONS.length) + "問出題します。本番のつもりで力試し！"));
+    box.appendChild(el("p", "stage__empty-msg", "本番のつもりで力試し！ 出題数をえらんでスタート。"));
+
+    // 出題数の選択（10 / 20 / 全問）
+    var picker = el("div", "testpick", null);
+    picker.setAttribute("role", "group");
+    picker.setAttribute("aria-label", "出題数");
+    TEST_OPTS.forEach(function (n) {
+      var label = (n >= QUESTIONS.length) ? "全" + QUESTIONS.length + "問" : n + "問";
+      var b = el("button", "testpick__item" + (n === testCount ? " is-active" : ""), label);
+      b.type = "button";
+      b.addEventListener("click", function () { testCount = n; renderTest(); });
+      picker.appendChild(b);
+    });
+    box.appendChild(picker);
+    box.appendChild(el("p", "testpick__note", "合格ライン " + PASS_LINE + "%"));
+
     var b = el("button", "btn btn--big btn--primary", "テストを始める");
     b.type = "button";
     b.addEventListener("click", startTest);
@@ -276,8 +309,19 @@
   }
 
   function startTest() {
-    test = { ids: shuffle(QUESTIONS.map(function (q) { return q.id; })).slice(0, Math.min(TEST_N, QUESTIONS.length)), idx: 0, revealed: false, results: {} };
+    var n = Math.min(testCount, QUESTIONS.length);
+    test = {
+      ids: shuffle(QUESTIONS.map(function (q) { return q.id; })).slice(0, n),
+      idx: 0, revealed: false, results: {}, start: new Date()
+    };
     renderTest();
+  }
+
+  // 所要時間を「m分s秒」で
+  function elapsedStr(start) {
+    var sec = Math.max(0, Math.round((new Date() - start) / 1000));
+    var m = Math.floor(sec / 60), s = sec % 60;
+    return m > 0 ? (m + "分" + s + "秒") : (s + "秒");
   }
 
   function testResult() {
@@ -285,10 +329,20 @@
     var correct = ids.filter(function (id) { return test.results[id] === "o"; });
     var wrong = ids.filter(function (id) { return test.results[id] !== "o"; });
     var score = Math.round((correct.length / ids.length) * 100);
+    var passed = score >= PASS_LINE;
+    var took = test.start ? elapsedStr(test.start) : null;
 
     var box = el("div", "stage__empty");
+
+    // 合否バッジ
+    var badge = el("div", "result__badge " + (passed ? "is-pass" : "is-fail"), passed ? "合格" : "もう一歩");
+    box.appendChild(badge);
+
     box.appendChild(el("div", "result__score", correct.length + " / " + ids.length + "問 正解"));
     box.appendChild(el("div", "result__points", score + "点"));
+    var meta = "合格ライン " + PASS_LINE + "%";
+    if (took) meta += " ・ 所要 " + took;
+    box.appendChild(el("div", "result__meta", meta));
 
     // ○×の内訳
     var grid = el("div", "result__grid");
@@ -308,29 +362,163 @@
         switchMode("recall");
       }));
     }
-    row.appendChild(quickBtn("別の10問", function () { startTest(); }));
+    row.appendChild(quickBtn("もう一度（" + (testCount >= QUESTIONS.length ? "全" + QUESTIONS.length + "問" : testCount + "問") + "）", function () { startTest(); }));
     box.appendChild(row);
+
+    // 間違えた問題を「答え＋解説」でその場に展開
+    if (wrong.length) {
+      var review = el("div", "result__review");
+      review.appendChild(el("h3", "result__review-head", "まちがえた問題の答えと解説"));
+      wrong.forEach(function (id) {
+        var q = QById[id];
+        var card = el("article", "card");
+        card.appendChild(el("div", "card__no", q.id));
+        var body = el("div", "card__body");
+        body.appendChild(buildText(q, true));   // 答えを表示
+        var note = buildNote(q, false);
+        if (note) body.appendChild(note);
+        body.appendChild(el("div", "card__page", "記載：" + pageLabel(q.page)));
+        card.appendChild(body);
+        review.appendChild(card);
+      });
+      box.appendChild(review);
+    }
     return box;
   }
 
   /* ====== モード/フィルタ/難易度 切替 ====== */
+  var MODES = ["study", "recall", "test", "report"];
+
   function switchMode(m) {
     mode = m;
-    ["study", "recall", "test"].forEach(function (k) {
+    MODES.forEach(function (k) {
       $("view-" + k).hidden = (k !== m);
       var tab = document.querySelector('.modeitem[data-mode="' + k + '"]');
       if (tab) { tab.classList.toggle("is-active", k === m); tab.setAttribute("aria-selected", k === m ? "true" : "false"); }
     });
-    moveThumb($("modeThumb"), ["study", "recall", "test"].indexOf(m));
-    // 難易度は 暗記・思い出す で有効（力試しでは隠す）
-    $("difficulty").hidden = (m === "test");
+    moveThumb($("modeThumb"), MODES.indexOf(m));
+    // 難易度は 暗記・思い出す でのみ有効（力試し・レポートでは隠す）
+    $("difficulty").hidden = (m === "test" || m === "report");
+    // フィルタチップは 思い出す のみ
+    $("filters").hidden = (m !== "recall");
     if (m === "study") renderStudy();
     else if (m === "recall") {
-      $("filters").hidden = false;
       if (filter === "custom" && customIds) setFilter("custom");
       else { var p = VLRStore.progress(QUESTIONS); setFilter(p.due > 0 ? "review" : "all"); }
     }
-    else { $("filters").hidden = true; renderTest(); }
+    else if (m === "test") renderTest();
+    else renderReport();
+  }
+
+  /* ====== 学習レポート（弱点を俯瞰） ====== */
+  var CATS = [
+    { key: "anat", label: "解剖・生理" },
+    { key: "device", label: "器具・機器" },
+    { key: "tech", label: "手技・操作" },
+    { key: "proto", label: "適応・プロトコール" }
+  ];
+
+  // 1問だけを「思い出す」で復習へ
+  function reviewOne(id) {
+    customIds = [id];
+    filter = "custom";
+    switchMode("recall");
+  }
+
+  function renderReport() {
+    var wrap = $("reportStage");
+    wrap.innerHTML = "";
+    var p = VLRStore.progress(QUESTIONS);
+
+    // --- サマリ ---
+    var sum = el("div", "report__summary");
+    sum.appendChild(reportStat(p.pct + "%", "定着度"));
+    sum.appendChild(reportStat(p.mastered + "", "マスター"));
+    sum.appendChild(reportStat(VLRStore.streak() + "", "連続日数"));
+    wrap.appendChild(sum);
+
+    // --- 分野別 正答率 ---
+    var catSec = el("section", "report__sec");
+    catSec.appendChild(el("h2", "report__title", "分野別の定着"));
+    CATS.forEach(function (c) {
+      var qs = QUESTIONS.filter(function (q) { return q.cat === c.key; });
+      if (!qs.length) return;
+      var mastered = 0, right = 0, wrong = 0;
+      qs.forEach(function (q) {
+        var card = VLRStore.card(q.id);
+        if (card) {
+          if (card.box >= VLRSrs.MASTER_BOX) mastered++;
+          right += card.right || 0; wrong += card.wrong || 0;
+        }
+      });
+      var answered = right + wrong;
+      var acc = answered ? Math.round((right / answered) * 100) : 0;
+
+      var rowEl = el("div", "report__cat");
+      var head = el("div", "report__cat-head");
+      head.appendChild(el("span", "report__cat-name", c.label));
+      head.appendChild(el("span", "report__cat-val", answered ? (acc + "%") : "—"));
+      rowEl.appendChild(head);
+      var bar = el("div", "report__bar");
+      var fill = el("span", "report__bar-fill");
+      fill.style.width = (answered ? acc : 0) + "%";
+      bar.appendChild(fill);
+      rowEl.appendChild(bar);
+      rowEl.appendChild(el("div", "report__cat-sub", "マスター " + mastered + "/" + qs.length + " ・ 正答 " + right + " / 解答 " + answered));
+      catSec.appendChild(rowEl);
+    });
+    wrap.appendChild(catSec);
+
+    // --- 63問ヒートマップ ---
+    var hmSec = el("section", "report__sec");
+    hmSec.appendChild(el("h2", "report__title", "問題ごとの定着（タップで復習）"));
+    var hm = el("div", "heatmap");
+    QUESTIONS.forEach(function (q) {
+      var c = VLRStore.card(q.id);
+      var box = c ? c.box : 0;
+      var cell = el("button", "heatcell box-" + box, q.id);
+      cell.type = "button";
+      if (c && c.wrong > 0) cell.classList.add("is-weak");
+      cell.setAttribute("aria-label", "問" + q.id + " 定着レベル" + box + "。タップで復習");
+      cell.addEventListener("click", function () { reviewOne(q.id); });
+      hm.appendChild(cell);
+    });
+    hmSec.appendChild(hm);
+    var legend = el("div", "heatlegend");
+    legend.appendChild(el("span", "heatlegend__item box-0", "未"));
+    legend.appendChild(el("span", "heatlegend__item box-1", "弱"));
+    legend.appendChild(el("span", "heatlegend__item box-3", "中"));
+    legend.appendChild(el("span", "heatlegend__item box-5", "強"));
+    hmSec.appendChild(legend);
+    wrap.appendChild(hmSec);
+
+    // --- 苦手トップ ---
+    var weak = QUESTIONS.filter(function (q) { var c = VLRStore.card(q.id); return c && c.wrong > 0; })
+      .sort(function (a, b) { return VLRStore.card(b.id).wrong - VLRStore.card(a.id).wrong; })
+      .slice(0, 8);
+    var weakSec = el("section", "report__sec");
+    weakSec.appendChild(el("h2", "report__title", "苦手トップ"));
+    if (!weak.length) {
+      weakSec.appendChild(el("p", "report__empty", "苦手な問題はまだありません。"));
+    } else {
+      weak.forEach(function (q) {
+        var c = VLRStore.card(q.id);
+        var item = el("button", "report__weak", null);
+        item.type = "button";
+        item.appendChild(el("span", "report__weak-no", "問 " + q.id));
+        item.appendChild(el("span", "report__weak-cnt", "✕ " + c.wrong + "回"));
+        item.addEventListener("click", function () { reviewOne(q.id); });
+        weakSec.appendChild(item);
+      });
+    }
+    wrap.appendChild(weakSec);
+  }
+
+  function reportStat(num, cap) {
+    var s = el("div", "report__stat");
+    s.appendChild(el("span", "report__stat-num", num));
+    s.appendChild(el("span", "report__stat-cap", cap));
+    return s;
   }
 
   function setFilter(f) {

@@ -4,7 +4,7 @@
  *   表示は即キャッシュから（速い・オフラインOK）、裏で最新を取得して次回に反映。
  * アプリを更新したら下の CACHE のバージョン（v1, v2 …）を上げると確実に入れ替わる。
  */
-const CACHE = "vlr-pretest-v2";
+const CACHE = "vlr-pretest-v3";
 const ASSETS = [
   "./",
   "./index.html",

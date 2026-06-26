@@ -47,6 +47,7 @@
       <button class="modeitem segmented__item is-active" data-mode="study" role="tab" aria-selected="true">暗記</button>
       <button class="modeitem segmented__item" data-mode="recall" role="tab" aria-selected="false">思い出す</button>
       <button class="modeitem segmented__item" data-mode="test" role="tab" aria-selected="false">力試し</button>
+      <button class="modeitem segmented__item" data-mode="report" role="tab" aria-selected="false">レポート</button>
     </div>
   </div>
 
@@ -85,6 +86,11 @@
     <!-- 力試しモード -->
     <section id="view-test" class="view" hidden>
       <div class="stage" id="testStage" aria-live="polite"></div>
+    </section>
+
+    <!-- レポートモード -->
+    <section id="view-report" class="view" hidden>
+      <div class="stage" id="reportStage" aria-live="polite"></div>
     </section>
   </main>
 
